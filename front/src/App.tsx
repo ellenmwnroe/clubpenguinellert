@@ -1,7 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import axios from 'axios';
-import MapaDaFesta from './MapaDaFesta'; // O mapa que criamos antes!
+import MapaDaFesta from './MapaDaFesta';
+import CartaoRSVP from './CartaoRSVP';
 
+type TelaAtiva = 'servidores' | 'login' | 'cartao';
+type StatusServidor = 'open' | 'full';
+
+type Servidor = {
+  id: string;
+  nome: string;
+  status: StatusServidor;
+  hasChat: boolean;
+  ocupacao?: number;
+};
+
+// Cores originais em grid quadrado
 const CORES_CP = [
   { nome: 'azul', hex: '#0054a6' },
   { nome: 'verde', hex: '#00923f' },
@@ -11,10 +24,20 @@ const CORES_CP = [
   { nome: 'laranja', hex: '#f7941d' },
 ];
 
+const SERVIDORES: Servidor[] = [
+  { id: 'geladeira', nome: 'Geladeira', status: 'full', hasChat: false },
+  { id: 'zero-grau', nome: 'Zero Grau', status: 'full', hasChat: true },
+  { id: 'polar', nome: 'Polar', status: 'full', hasChat: false },
+  { id: 'avalanche', nome: 'Avalanche', status: 'full', hasChat: true },
+  { id: 'frozen-da-elle', nome: 'Frozen da Elle', status: 'open', hasChat: true, ocupacao: 4 },
+];
+
+const SERVIDOR_ABERTO = SERVIDORES.find((servidor) => servidor.status === 'open')!;
+
 function App() {
-  // Agora começamos na tela de SERVIDORES
-  const [telaAtiva, setTelaAtiva] = useState<'servidores' | 'login' | 'cartao'>('servidores');
-  const [nome, setNome] = useState('');
+  const [telaAtiva, setTelaAtiva] = useState<TelaAtiva>('servidores');
+  const [servidorSelecionado, setServidorSelecionado] = useState<Servidor>(SERVIDOR_ABERTO);
+  const [nome, setNome] = useState('ellen monroe');
   const [corSelecionada, setCorSelecionada] = useState('azul');
   const [puffle, setPuffle] = useState(false);
   const [nomePuffle, setNomePuffle] = useState('');
@@ -22,207 +45,519 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [mapaAtivo, setMapaAtivo] = useState(false);
 
+  const nomeLimpo = nome.replace('!bday20', '').trim();
+
   useEffect(() => {
-    if (nome.includes('!bday20')) {
-      setIsVip(true);
-    } else {
-      setIsVip(false);
-    }
+    setIsVip(nome.includes('!bday20'));
   }, [nome]);
 
-  const enviarRSVP = async () => {
-    if (!nome) {
-      alert('opa, esqueceu de colocar o nome do pinguim!');
+  const selecionarServidor = (servidor: Servidor) => {
+    if (servidor.status !== 'open') {
+      alert(`O servidor ${servidor.nome} está cheio. Tente outro servidor.`);
       return;
     }
+    setServidorSelecionado(servidor);
+    setTelaAtiva('login');
+  };
+
+  const enviarRSVP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nomeLimpo) {
+      alert('Por favor, insira o nome do seu pinguim.');
+      return;
+    }
+
     setLoading(true);
+
     try {
       await axios.post('http://127.0.0.1:8000/api/rsvp', {
-        nome_pinguim: nome.replace('!bday20', '').trim(),
+        nome_pinguim: nomeLimpo,
         cor: corSelecionada,
         trazendo_puffle: puffle,
         nome_puffle: puffle ? nomePuffle : null,
-        item_vip: isVip ? 'puffle_de_elite' : null
+        item_vip: isVip ? 'puffle_de_elite' : null,
       });
+
       setTimeout(() => setTelaAtiva('cartao'), 1200);
-    } catch (e) {
-      alert('erro de conexão com a ilha (server off).');
+    } catch {
+      alert('Erro de conexão com o servidor. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
-  // TELA 1: ESCOLHA DE SERVIDOR
   if (telaAtiva === 'servidores') {
     return (
-      <div style={styles.container}>
-        <div style={styles.serverWindow}>
-          <div style={styles.serverHeader}>
-            <h2 style={{margin: 0}}>selecione um servidor</h2>
-            <p style={{margin: '5px 0 0 0', fontSize: '0.9rem', color: '#caf0f8'}}>o drop vai ser pesado. escolha com sabedoria.</p>
-          </div>
+      <div style={styles.cpBackground}>
+        <div style={styles.serverContainer}>
+          <h1 style={styles.serverTitleComic}>SUGESTÕES DE SERVIDORES</h1>
+          
           <div style={styles.serverList}>
-            {/* Servidor 1 (O que a pessoa vai clicar) */}
-            <div style={styles.serverItem} onClick={() => setTelaAtiva('login')}>
-              <div style={styles.serverInfo}>
-                <span style={styles.serverName}>salão_jardins_lotado ❄️</span>
-                <span style={styles.serverDesc}>sugestão: evento principal às 20h30</span>
-              </div>
-              <div style={styles.statusBar}><div style={{...styles.statusFill, width: '95%', background: '#d62828'}}></div></div>
-            </div>
+            {SERVIDORES.map((servidor) => {
+              const isOpen = servidor.status === 'open';
+              const barrasTotais = 5;
 
-            {/* Outros servidores "fakes" só pela zoeira */}
-            <div style={styles.serverItem} onClick={() => setTelaAtiva('login')}>
-              <div style={styles.serverInfo}>
-                <span style={styles.serverName}>fofoca_no_iglu 🐧</span>
-                <span style={styles.serverDesc}>servidor pra quem vai ficar sentado</span>
-              </div>
-              <div style={styles.statusBar}><div style={{...styles.statusFill, width: '60%', background: '#ffb703'}}></div></div>
-            </div>
+              return (
+                <div 
+                  key={servidor.id} 
+                  style={styles.serverRow}
+                  onClick={() => selecionarServidor(servidor)}
+                >
+                  
+                  {/* ESQUERDA: EMOJI + NOME */}
+                  <div style={styles.serverRowLeft}>
+                    <img 
+                      src={isOpen ? '/emoji_open.png' : '/emoji_full.png'} 
+                      alt="Amigos" 
+                      style={styles.buddyIcon}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                    <span style={styles.serverNameTextBurbank}>{servidor.nome}</span>
+                  </div>
+                  
+                  {/* DIREITA: BARRINHAS OU TEXTO LOTADO */}
+                  <div style={styles.serverRowRight}>
+                    {isOpen ? (
+                      <div style={styles.greenBarsContainer}>
+                        {Array.from({ length: barrasTotais }).map((_, i) => (
+                          <div 
+                            key={i} 
+                            style={{
+                              ...styles.greenBar, 
+                              height: `${14 + (i * 4)}px`, 
+                              backgroundColor: i < (servidor.ocupacao || 0) ? '#00ff00' : '#004400',
+                              borderColor: i < (servidor.ocupacao || 0) ? '#005500' : '#002200'
+                            }}
+                          ></div>
+                        ))}
+                      </div>
+                    ) : (
+                      <span style={styles.lotadoTextComic}>LOTADO</span>
+                    )}
+                  </div>
 
-            <div style={styles.serverItem} onClick={() => setTelaAtiva('login')}>
-              <div style={styles.serverInfo}>
-                <span style={styles.serverName}>puffle_party_vip 🐾</span>
-                <span style={styles.serverDesc}>só entra quem tem acompanhante</span>
-              </div>
-              <div style={styles.statusBar}><div style={{...styles.statusFill, width: '80%', background: '#00923f'}}></div></div>
-            </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
     );
   }
 
-  // TELA 3: CARTÃO DO PINGUIM (COM O MAPA)
-  if (telaAtiva === 'cartao') {
+ if (telaAtiva === 'cartao') {
     return (
-      <div style={styles.container}>
-        {mapaAtivo && <MapaDaFesta onClose={() => setMapaAtivo(false)} pinguimName={nome.replace('!bday20', '')}/>}
+      <div style={styles.cpBackground}>
+        {mapaAtivo && <MapaDaFesta onClose={() => setMapaAtivo(false)} pinguimName={nomeLimpo} />}
+
+        <CartaoRSVP 
+          nome={nomeLimpo} 
+          cor={corSelecionada} 
+          puffle={puffle} 
+          nomePuffle={nomePuffle} 
+          onOpenMap={() => setMapaAtivo(true)} 
+        />
         
-        <div style={styles.playerCard}>
-          <div style={styles.cardHeader}>
-            <span>{nome.replace('!bday20', '')}</span>
-            <div style={styles.levelBadge}>nível 20</div>
-          </div>
-          <div style={styles.cardBody}>
-            <p style={{ textAlign: 'center', fontSize: '1.1rem', color: '#0054a6', fontWeight: 'bold' }}>
-              vip do b-day da ellen 🎂
-            </p>
-            <p>📍 <strong>local:</strong> salão do jardins (20h30)</p>
-            <p>🎨 <strong>skin:</strong> {corSelecionada}</p>
-            {puffle && <p>🐾 <strong>+1:</strong> {nomePuffle || 'puffle anônimo'}</p>}
-            
-            <button onClick={() => setMapaAtivo(true)} style={styles.actionButton}>[ abrir mapa da festa ]</button>
-          </div>
-        </div>
       </div>
     );
   }
 
-  // TELA 2: LOGIN (CRIAR PINGUIM) - CONTINUA IGUAL
   return (
-    <div style={styles.container}>
-      <div style={{ textAlign: 'center', marginBottom: '20px', color: '#fff' }}>
-        <h1 style={{ margin: 0, fontSize: '2.5rem', textShadow: '2px 2px 0 #0054a6' }}>
-          ellen's b-day: nível 20
-        </h1>
-        <p style={{ fontSize: '1.1rem', fontWeight: 'bold', background: '#0054a6', display: 'inline-block', padding: '5px 15px', borderRadius: '15px' }}>
-          servidor: salão do jardins • 20h30
-        </p>
-      </div>
-
-      <div style={styles.legacyWindow}>
-        <div style={styles.leftPanel}>
-          <img 
-            src={`/${corSelecionada}.png`} 
-            alt={`pinguim ${corSelecionada}`} 
-            style={styles.penguinImage}
-            onError={(e) => {(e.target as HTMLImageElement).style.display = 'none';}}
-          />
-          <div style={styles.shadow}></div>
+    <div style={styles.cpBackground}>
+      <div style={styles.createPenguinWindow}>
+        
+        {/* LADO ESQUERDO */}
+        <div style={styles.createLeft}>
+          <div style={styles.sunburstBackground}>
+            <img
+              src={`/${corSelecionada}.png`}
+              alt="Seu Pinguim"
+              style={styles.bigPenguin}
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+            <div style={styles.penguinShadow}></div>
+          </div>
+          <p style={styles.previewName}>{nomeLimpo || 'Nome do Pinguim'}</p>
         </div>
 
-        <div style={styles.rightPanel}>
-          <div style={styles.inputGroup}>
-            <div style={styles.numberBadge}>1</div>
-            <div style={{width: '100%'}}>
-              <p style={styles.textSmall}>teu @ do pinguim:</p>
-              <input style={styles.input} value={nome} onChange={(e) => setNome(e.target.value.toLowerCase())} placeholder="ex: pinguim_zica"/>
+        {/* LADO DIREITO */}
+        <form style={styles.createRight} onSubmit={enviarRSVP}>
+          
+          <h2 style={styles.formTitle}>CRIAR PINGUIM</h2>
+
+          <div style={styles.stepGroup}>
+            <div style={styles.stepBubble}>1</div>
+            <div style={styles.stepContent}>
+              <label style={styles.stepLabel}>Nome do pinguim (seu @):</label>
+              <input
+                style={styles.classicInput}
+                value={nome}
+                onChange={(e) => setNome(e.target.value.toLowerCase())}
+                placeholder="teu nome mesmo kk"
+              />
             </div>
           </div>
 
-          <div style={styles.inputGroup}>
-            <div style={styles.numberBadge}>2</div>
-            <div>
-              <p style={styles.textSmall}>escolha a skin:</p>
-              <div style={styles.colorGrid}>
-                {CORES_CP.map(c => (
-                  <div 
-                    key={c.nome} onClick={() => setCorSelecionada(c.nome)}
-                    style={{...styles.colorCircle, backgroundColor: c.hex, border: corSelecionada === c.nome ? '3px solid #000' : '2px solid transparent'}}
+          <div style={styles.stepGroup}>
+            <div style={styles.stepBubble}>2</div>
+            <div style={styles.stepContent}>
+              <label style={styles.stepLabel}>Escolha a skin:</label>
+              <div style={styles.colorSquareGrid}>
+                {CORES_CP.map((cor) => (
+                  <div
+                    key={cor.nome}
+                    onClick={() => setCorSelecionada(cor.nome)}
+                    style={{
+                      ...styles.colorSquare,
+                      backgroundColor: cor.hex,
+                      outline: corSelecionada === cor.nome ? '3px solid #0054a6' : '1px solid #ccc',
+                      outlineOffset: '2px'
+                    }}
                   />
                 ))}
               </div>
             </div>
           </div>
 
-          <div style={styles.inputGroup}>
-            <div style={styles.numberBadge}>3</div>
-            <div style={{width: '100%'}}>
-              <label style={styles.checkbox}>
-                <input type="checkbox" checked={puffle} onChange={() => setPuffle(!puffle)} style={{ cursor: 'pointer' }}/>
-                <span>vou levar um puffle (+1)</span>
+          <div style={styles.stepGroup}>
+            <div style={styles.stepBubble}>3</div>
+            <div style={styles.stepContent}>
+              <label style={styles.classicCheckboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={puffle}
+                  onChange={() => setPuffle(!puffle)}
+                  style={{ transform: 'scale(1.2)' }}
+                />
+                Vou levar um Puffle (+1)
               </label>
+              
               {puffle && (
-                <div style={{marginTop: '10px', background: '#f0f8ff', padding: '10px', borderRadius: '8px'}}>
-                  <p style={{...styles.textSmall, color: '#0054a6'}}>nome do acompanhante:</p>
-                  <input style={styles.input} value={nomePuffle} onChange={(e) => setNomePuffle(e.target.value)} placeholder="ex: flufy"/>
+                <div style={styles.puffleJokeBox}>
+                  <p style={styles.jokeText}>
+                    (casca de bala, namorado de cc, ayla, pet, chaveirinho...)
+                  </p>
+                  <input
+                    style={styles.classicInput}
+                    value={nomePuffle}
+                    onChange={(e) => setNomePuffle(e.target.value)}
+                    placeholder="nome do fofoqueiro(a)"
+                  />
                 </div>
               )}
             </div>
           </div>
 
-          <button onClick={enviarRSVP} style={styles.button}>
-            {loading ? 'carregando nível 20...' : 'entrar no servidor'}
-          </button>
-        </div>
+          <div style={styles.bottomAction}>
+             <button type="submit" style={styles.classicButtonBlue}>
+              {loading ? 'CARREGANDO...' : 'CRIAR PINGUIM'}
+            </button>
+          </div>
+        </form>
+
       </div>
     </div>
   );
 }
 
-const styles: { [key: string]: React.CSSProperties } = {
-  // ... (Cole os estilos que você já tinha no App.tsx aqui)
-  container: { minHeight: '100vh', background: 'radial-gradient(circle, #90e0ef 0%, #0077b6 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', padding: '20px', boxSizing: 'border-box' },
-  legacyWindow: { width: '100%', maxWidth: '780px', background: '#fff', border: '6px solid #0054a6', borderRadius: '20px', display: 'flex', flexDirection: 'row', overflow: 'hidden', boxShadow: '0 15px 30px rgba(0,0,0,0.3)', flexWrap: 'wrap' },
-  leftPanel: { flex: '1 1 300px', background: 'repeating-linear-gradient(45deg, #f8fcf8, #f8fcf8 10px, #eef7ff 10px, #eef7ff 20px)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '40px 20px', borderRight: '2px solid #e0e0e0' },
-  penguinImage: { width: '220px', height: 'auto', zIndex: 2, transition: 'all 0.3s ease' },
-  shadow: { width: '130px', height: '20px', background: 'rgba(0,0,0,0.1)', borderRadius: '50%', marginTop: '-15px', zIndex: 1 },
-  rightPanel: { flex: '1 1 350px', padding: '30px', display: 'flex', flexDirection: 'column', gap: '20px', background: '#ffffff' },
-  inputGroup: { display: 'flex', gap: '15px', alignItems: 'flex-start' },
-  numberBadge: { background: '#0054a6', color: '#fff', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 'bold', flexShrink: 0, marginTop: '5px', fontSize: '0.9rem' },
-  textSmall: { fontSize: '0.9rem', margin: '0 0 5px 0', color: '#333', fontWeight: 'bold' },
-  input: { width: '100%', padding: '12px', borderRadius: '8px', border: '2px solid #ccc', outline: 'none', boxSizing: 'border-box', fontSize: '1rem', background: '#fafafa' },
-  colorGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' },
-  colorCircle: { width: '45px', height: '45px', borderRadius: '10px', cursor: 'pointer', transition: 'transform 0.1s' },
-  checkbox: { display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold', color: '#0054a6', cursor: 'pointer', fontSize: '1rem' },
-  button: { padding: '15px', background: '#ffb703', color: '#023047', border: '3px solid #023047', borderRadius: '10px', fontWeight: 'bold', fontSize: '1.2rem', cursor: 'pointer', marginTop: '10px', boxShadow: '3px 3px 0 #023047', transition: 'all 0.1s ease' },
-  playerCard: { width: '320px', background: '#48cae4', border: '6px solid #fff', borderRadius: '20px', color: '#023047', boxShadow: '0px 15px 30px rgba(0,0,0,0.3)' },
-  cardHeader: { padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.4)', fontWeight: 'bold', fontSize: '1.2rem' },
-  levelBadge: { background: '#ffb703', padding: '4px 10px', borderRadius: '15px', fontSize: '0.8rem', border: '2px solid #023047' },
-  cardBody: { padding: '25px', display: 'flex', flexDirection: 'column', gap: '10px' },
-  actionButton: { width: '100%', padding: '12px', marginTop: '20px', background: '#fff', border: '3px solid #023047', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', color: '#023047' },
-  
-  // NOVOS ESTILOS PARA A TELA DE SERVIDORES
-  serverWindow: { width: '100%', maxWidth: '500px', background: '#fff', border: '6px solid #0054a6', borderRadius: '15px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.3)' },
-  serverHeader: { background: '#0054a6', color: '#fff', padding: '20px', textAlign: 'center' },
-  serverList: { padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', background: '#f0f8ff' },
-  serverItem: { background: '#fff', border: '3px solid #bce2ff', borderRadius: '10px', padding: '15px', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  serverInfo: { display: 'flex', flexDirection: 'column', gap: '5px' },
-  serverName: { fontWeight: 'bold', color: '#0054a6', fontSize: '1.1rem' },
-  serverDesc: { fontSize: '0.8rem', color: '#555' },
-  statusBar: { width: '80px', height: '12px', background: '#e0e0e0', borderRadius: '10px', overflow: 'hidden', border: '1px solid #ccc' },
-  statusFill: { height: '100%' }
+const styles: Record<string, CSSProperties> = {
+  // A VINHETA: Radial gradient escurecendo nas bordas
+  cpBackground: {
+    minHeight: '100vh',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    background: 'radial-gradient(circle at center, #027fcc 0%, #00529b 100%)', 
+    padding: '20px',
+    boxSizing: 'border-box',
+    fontFamily: '"Burbank Big Condensed Black", Arial, sans-serif',
+  },
+
+  // TELA DE SERVIDORES
+  serverContainer: {
+    width: '100%',
+    maxWidth: '500px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '20px',
+  },
+  serverTitleComic: {
+    fontFamily: '"CCComicrazy Italic", sans-serif',
+    color: '#ffffff',
+    fontSize: '2.0rem',
+    fontStyle: 'italic',
+    margin: 0,
+    textShadow: '-2px -2px 0 #000e4e, 2px -2px 0 #000e4e, -2px 2px 0 #000e4e, 2px 2px 0 #000e4e, 0 4px 0 #000e4e', 
+    letterSpacing: '1px',
+    textAlign: 'center',
+  },
+  serverList: {
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+  },
+  serverRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    background: 'linear-gradient(to bottom, #006ebc, #004d8a)', 
+    border: '3px solid #1a8ad6', 
+    borderRadius: '30px',
+    padding: '10px 20px',
+    cursor: 'pointer',
+    boxShadow: 'inset 0 4px 0 rgba(255,255,255,0.2), 0 4px 8px rgba(0,0,0,0.3)', 
+  },
+  serverRowLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px', // Espaço entre o emoji e o nome
+  },
+  serverNameTextBurbank: {
+    fontFamily: '"Burbank Big Condensed Black", sans-serif',
+    color: '#ffffff',
+    fontSize: '1.6rem',
+    textShadow: '1px 1px 0 #000', 
+  },
+  serverRowRight: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  buddyIcon: {
+    width: '32px', // Tamanho certinho do emoji do CP
+    borderRadius: '50%',
+    height: 'auto',
+    filter: 'drop-shadow(1px 1px 0 #000)'
+  },
+  lotadoTextComic: {
+    fontFamily: '"CCComicrazy Italic", sans-serif',
+    color: '#ffffff',
+    fontSize: '1.4rem',
+    fontStyle: 'italic',
+    textShadow: '-2px -2px 0 #003366, 2px -2px 0 #003366, -2px 2px 0 #003366, 2px 2px 0 #003366, 0 3px 0 #003366',
+    letterSpacing: '1px',
+    transform: 'skewX(-5deg)',
+  },
+  greenBarsContainer: {
+    display: 'flex',
+    alignItems: 'flex-end',
+    gap: '3px',
+    height: '24px',
+    marginLeft: '5px'
+  },
+  greenBar: {
+    width: '8px',
+    transform: 'skewX(-15deg)', 
+    borderRadius: '0px', 
+    boxShadow: '1px 1px 0 rgba(0,0,0,0.5)' 
+  },
+
+  // TELA CRIAR PINGUIM
+  createPenguinWindow: {
+    width: '100%',
+    maxWidth: '750px',
+    backgroundColor: '#ffffff',
+    border: '6px solid #0088d3',
+    borderRadius: '15px',
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    boxShadow: '0 0 0 6px #ffffff, 0 10px 30px rgba(0,0,0,0.5)', 
+  },
+  createLeft: {
+    flex: '1 1 300px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: '30px 20px',
+    position: 'relative',
+    overflow: 'hidden',
+    borderRight: '2px solid #e0e0e0',
+  },
+  sunburstBackground: {
+    width: '100%',
+    height: '280px',
+    background: 'radial-gradient(circle, #ffffff 10%, #dcf0fb 80%)',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  bigPenguin: {
+    width: '160px',
+    height: 'auto',
+    zIndex: 2,
+  },
+  penguinShadow: {
+    width: '110px',
+    height: '20px',
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    borderRadius: '50%',
+    marginTop: '-10px',
+    zIndex: 1,
+  },
+  previewName: {
+    fontFamily: '"Burbank Big Condensed Black", sans-serif',
+    fontSize: '1.6rem',
+    color: '#0054a6',
+    marginTop: '15px',
+  },
+  createRight: {
+    flex: '1 1 350px',
+    padding: '25px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+  },
+  formTitle: {
+    fontFamily: '"Burbank Big Condensed Black", sans-serif',
+    fontSize: '1.8rem',
+    color: '#333',
+    margin: '0 0 5px 0'
+  },
+  stepGroup: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '12px',
+  },
+  stepBubble: {
+    fontFamily: '"Burbank Big Condensed Black", sans-serif',
+    width: '30px',
+    height: '30px',
+    backgroundColor: '#0088d3',
+    borderRadius: '50%',
+    color: '#ffffff',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    fontSize: '1.3rem',
+    flexShrink: 0,
+    boxShadow: 'inset 0 4px 0 rgba(255,255,255,0.3)',
+  },
+  stepContent: {
+    width: '100%',
+  },
+  stepLabel: {
+    display: 'block',
+    fontFamily: '"Burbank Big Condensed Black", sans-serif',
+    fontSize: '1.2rem', 
+    color: '#333333',
+    fontWeight: 'normal', 
+    marginBottom: '6px',
+    letterSpacing: '1px',
+  },
+  // FONTE BURBANK AQUI NO INPUT
+  classicInput: {
+    width: '100%',
+    padding: '10px',
+    border: '2px solid #cccccc',
+    borderRadius: '8px',
+    fontSize: '1rem', // Um pouco maior pq a Burbank é menorzinha
+    fontFamily: '"Burbank Big Condensed Black", Arial, sans-serif',
+    outline: 'none',
+    boxSizing: 'border-box',
+    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)',
+  },
+  colorSquareGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(5, 35px)',
+    gap: '6px',
+  },
+  colorSquare: {
+    width: '35px',
+    height: '35px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+  },
+  classicCheckboxLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontFamily: '"Burbank Big Condensed Black", sans-serif', // <-- Burbank aqui!
+    fontSize: '1rem', // <-- Maiorzinha
+    color: '#333333',
+    fontWeight: 'normal', // <-- Sem bold
+    cursor: 'pointer',
+    letterSpacing: '1px',
+  },
+  puffleJokeBox: {
+    marginTop: '10px', 
+    background: '#eff8ff', 
+    padding: '10px', 
+    borderRadius: '10px', 
+    border: '2px dashed #bce2ff'
+  },
+  jokeText: {
+    fontFamily: '"Burbank Big Condensed Black", sans-serif', // <-- Burbank aqui!
+    fontSize: '1.1rem',
+    color: '#666',
+    margin: '0 0 5px 0',
+    fontWeight: 'normal',
+    letterSpacing: '1px',
+  },
+  bottomAction: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginTop: '5px',
+  },
+  classicButtonBlue: {
+    fontFamily: '"Burbank Big Condensed Black", sans-serif',
+    background: 'linear-gradient(to bottom, #0071c5, #004d8a)',
+    color: '#ffffff',
+    border: '2px solid #003366',
+    borderRadius: '20px',
+    padding: '8px 20px',
+    fontSize: '1.3rem',
+    cursor: 'pointer',
+    boxShadow: 'inset 0 4px 0 rgba(255,255,255,0.2), 0 4px 6px rgba(0,0,0,0.2)',
+  },
+
+  // CARTÃO DE RSVP FINAL
+  playerCard: {
+    width: '280px',
+    backgroundColor: '#dcf0fb',
+    border: '6px solid #ffffff',
+    borderRadius: '15px',
+    boxShadow: '0 0 0 4px #0088d3, 0 10px 20px rgba(0,0,0,0.5)',
+    overflow: 'hidden',
+  },
+  cardHeaderBurbank: {
+    fontFamily: '"Burbank Big Condensed Black", sans-serif',
+    backgroundColor: '#0088d3',
+    padding: '8px 12px',
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: '1.6rem',
+    textAlign: 'center',
+  },
+  cardBody: {
+    padding: '15px',
+    color: '#333333',
+    fontFamily: '"Burbank Big Condensed Black", sans-serif', // <-- Burbank no cartão final!
+    fontSize: '1.3rem', // <-- Aumentei pro cartão ficar bonitão
+    lineHeight: 1.2,
+    fontWeight: 'normal',
+    letterSpacing: '1px',
+  },
+  actionButtonBurbank: {
+    fontFamily: '"Burbank Big Condensed Black", sans-serif',
+    width: '100%',
+    background: 'linear-gradient(to bottom, #ffd95b 0%, #ffbf1f 100%)',
+    color: '#17466f',
+    border: '3px solid #17466f',
+    borderRadius: '15px',
+    padding: '10px',
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    marginTop: '15px',
+    boxShadow: 'inset 0 6px 0 rgba(255,255,255,0.2), 0 4px 6px rgba(0,0,0,0.2)',
+  },
 };
 
 export default App;

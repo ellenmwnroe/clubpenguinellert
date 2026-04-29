@@ -1,0 +1,123 @@
+
+@font-face {
+  font-family: 'Bumbastika Improved';
+  src: url('/fonts/BumbastikaImproved.otf') format('truetype'); /* Ajuste o caminho/extensão se precisar */
+}
+@font-face {
+  font-family: 'Burbank Big Condensed Black';
+  src: url('/fonts/burbankbigregular_bold.otf') format('truetype');
+}
+@font-face {
+  font-family: 'CCComicrazy Italic';
+  src: url('/fonts/CCComicrazy-Italic.ttf') format('truetype');
+}
+:root {
+  color: #173d60;
+  font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+  font-synthesis: none;
+  line-height: 1.4;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.95) 0%, rgba(206, 240, 255, 0.92) 20%, rgba(89, 188, 232, 0.95) 46%, rgba(8, 108, 174, 1) 100%);
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.38;
+  background:
+    radial-gradient(circle at 12% 22%, rgba(255, 255, 255, 0.8) 0 2px, transparent 3px),
+    radial-gradient(circle at 24% 72%, rgba(255, 255, 255, 0.7) 0 2px, transparent 3px),
+    radial-gradient(circle at 38% 18%, rgba(255, 255, 255, 0.7) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 62% 32%, rgba(255, 255, 255, 0.78) 0 2px, transparent 3px),
+    radial-gradient(circle at 78% 76%, rgba(255, 255, 255, 0.7) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 88% 26%, rgba(255, 255, 255, 0.78) 0 2px, transparent 3px);
+  animation: snowDrift 14s linear infinite alternate;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  appearance: none;
+}
+
+code {
+  font-family: 'Consolas', 'Courier New', monospace;
+}
+
+::selection {
+  background: rgba(255, 210, 76, 0.9);
+  color: #173d60;
+}
+
+@keyframes snowDrift {
+  from {
+    transform: translate3d(0, -10px, 0);
+  }
+
+  to {
+    transform: translate3d(0, 10px, 0);
+  }
+}
+
+button:active {
+  transform: translate(4px, 4px);
+  box-shadow: none !important;
+}
+
+.infoBox p {
+  margin: 0;
+}
+
+.infoBox strong {
+  display: block;
+  color: #0b78b8;
+  font-size: 1rem;
+  text-transform: lowercase;
+}
+
+.infoBox span {
+  display: block;
+  font-size: 1.45rem;
+  text-transform: lowercase;
+}
+
+.info div {
+  display: grid;
+  gap: 2px;
+}
+
+.info small {
+  color: #0b78b8;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.info span {
+  font-size: 1.55rem;
+  line-height: 1;
+}
