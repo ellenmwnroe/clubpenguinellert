@@ -1,9 +1,9 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import axios from 'axios';
-import MapaDaFesta from './MapaDaFesta';
 import CartaoRSVP from './CartaoRSVP';
+import DanceClub from './danceclub';
 
-type TelaAtiva = 'servidores' | 'login' | 'cartao';
+type TelaAtiva = 'servidores' | 'login' | 'cartao' | 'danceclub';
 type StatusServidor = 'open' | 'full';
 
 type Servidor = {
@@ -32,18 +32,15 @@ const SERVIDORES: Servidor[] = [
   { id: 'frozen-da-elle', nome: 'Frozen da Elle', status: 'open', hasChat: true, ocupacao: 4 },
 ];
 
-const SERVIDOR_ABERTO = SERVIDORES.find((servidor) => servidor.status === 'open')!;
-
 function App() {
   const [telaAtiva, setTelaAtiva] = useState<TelaAtiva>('servidores');
-  const [servidorSelecionado, setServidorSelecionado] = useState<Servidor>(SERVIDOR_ABERTO);
+
   const [nome, setNome] = useState('ellen monroe');
   const [corSelecionada, setCorSelecionada] = useState('azul');
   const [puffle, setPuffle] = useState(false);
   const [nomePuffle, setNomePuffle] = useState('');
   const [isVip, setIsVip] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [mapaAtivo, setMapaAtivo] = useState(false);
 
   const nomeLimpo = nome.replace('!bday20', '').trim();
 
@@ -56,7 +53,6 @@ function App() {
       alert(`O servidor ${servidor.nome} está cheio. Tente outro servidor.`);
       return;
     }
-    setServidorSelecionado(servidor);
     setTelaAtiva('login');
   };
 
@@ -89,6 +85,7 @@ function App() {
   if (telaAtiva === 'servidores') {
     return (
       <div style={styles.cpBackground}>
+        <Credito />
         <div style={styles.serverContainer}>
           <h1 style={styles.serverTitleComic}>SUGESTÕES DE SERVIDORES</h1>
           
@@ -145,25 +142,33 @@ function App() {
     );
   }
 
- if (telaAtiva === 'cartao') {
-    return (
-      <div style={styles.cpBackground}>
-        {mapaAtivo && <MapaDaFesta onClose={() => setMapaAtivo(false)} pinguimName={nomeLimpo} />}
+if (telaAtiva === 'cartao') {
+  return (
+    <div style={styles.cpBackground}>
+      <Credito />
 
-        <CartaoRSVP 
-          nome={nomeLimpo} 
-          cor={corSelecionada} 
-          puffle={puffle} 
-          nomePuffle={nomePuffle} 
-          onOpenMap={() => setMapaAtivo(true)} 
-        />
-        
-      </div>
-    );
-  }
+      <CartaoRSVP
+        nome={nomeLimpo}
+        cor={corSelecionada}
+        puffle={puffle}
+        nomePuffle={nomePuffle}
+        onOpenMap={() => setTelaAtiva('danceclub')}
+      />
+    </div>
+  );
+}
+
+if (telaAtiva === 'danceclub') {
+  return (
+    <DanceClub
+      onBack={() => setTelaAtiva('cartao')}
+    />
+  );
+}
 
   return (
     <div style={styles.cpBackground}>
+      <Credito />
       <div style={styles.createPenguinWindow}>
         
         {/* LADO ESQUERDO */}
@@ -237,13 +242,13 @@ function App() {
               {puffle && (
                 <div style={styles.puffleJokeBox}>
                   <p style={styles.jokeText}>
-                    (casca de bala, namorado de cc, ayla, pet, chaveirinho...)
+                    (casquinha, namorade, peixe, cachorro, papagaio, chaveirinho...)
                   </p>
                   <input
                     style={styles.classicInput}
                     value={nomePuffle}
                     onChange={(e) => setNomePuffle(e.target.value)}
-                    placeholder="nome do fofoqueiro(a)"
+                    placeholder="nome do teu +1"
                   />
                 </div>
               )}
@@ -260,6 +265,14 @@ function App() {
       </div>
     </div>
   );
+
+  function Credito() {
+  return (
+    <div style={styles.credito}>
+      feito por ellen monroe
+    </div>
+  );
+}
 }
 
 const styles: Record<string, CSSProperties> = {
@@ -558,6 +571,21 @@ const styles: Record<string, CSSProperties> = {
     marginTop: '15px',
     boxShadow: 'inset 0 6px 0 rgba(255,255,255,0.2), 0 4px 6px rgba(0,0,0,0.2)',
   },
+  credito: {
+  position: 'fixed',
+  right: '14px',
+  bottom: '10px',
+  zIndex: 9999,
+  fontFamily: 'Arial, sans-serif',
+  fontSize: '0.75rem',
+  fontWeight: 700,
+  color: '#ffffff',
+  textShadow: '1px 1px 0 #003366',
+  opacity: 0.85,
+  pointerEvents: 'none',
+},
 };
+
+
 
 export default App;

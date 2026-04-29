@@ -47,12 +47,12 @@ export default function CartaoRSVP({
           <div style={styles.info}>
             <div style={styles.infoItem}>
               <small style={styles.label}>onde</small>
-              <span style={styles.value}>salão do jardins</span>
+              <span style={styles.value}>salão do jardins de lombardia</span>
             </div>
 
             <div style={styles.infoItem}>
               <small style={styles.label}>quando</small>
-              <span style={styles.value}>08 de maio · 20h30</span>
+              <span style={styles.value}>15 de maio · 20h30</span>
             </div>
 
             {puffle && (
