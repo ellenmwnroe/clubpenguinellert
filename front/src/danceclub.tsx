@@ -9,10 +9,10 @@ const personagens = [
     id: 1,
     nome: 'thom_yorke',
     img: '/penguindance1.gif',
-    x: '30%',
-    y: '67%',
-    fala: 'im not here, this isn\'t happening???',
-    size: '125px'
+    x: '31%',
+    y: '68%',
+    fala: "im not here, this isn't happening???",
+    size: 105,
   },
   {
     id: 2,
@@ -21,19 +21,19 @@ const personagens = [
     x: '50%',
     y: '72%',
     fala: 'ola pessoal boa noite',
-    size: '138px',
-    speechOffset: '-50px'
+    size: 112,
+    speechOffset: '-24px',
   },
   {
     id: 3,
     nome: 'ritaduvall67',
     img: '/penguindance3.gif',
-    x: '70%',
-    y: '66%',
+    x: '68%',
+    y: '67%',
     fala: 'vc quer saber a lista de presentes? clica em mim aff',
-    size: '105px',
-    link: 'https://br.pinterest.com/erispyscho/club-elle/'
-  }
+    size: 90,
+    link: 'https://br.pinterest.com/erispyscho/club-elle/',
+  },
 ];
 
 export default function DanceClub({ onBack }: DanceClubProps) {
@@ -84,11 +84,12 @@ export default function DanceClub({ onBack }: DanceClubProps) {
             key={p.id}
             style={{
                 ...styles.character,
-                left: p.x,
+                 left: p.x,
                 top: p.y,
-                width: `clamp(${parseInt(p.size) * 0.62}px, ${parseInt(p.size) / 7}vw, ${p.size})`,
-                cursor: p.link ? 'pointer' : 'default'
-            }}
+                width: `clamp(${p.size * 0.45}px, ${p.size / 10}vw, ${p.size}px)`,
+                cursor: p.link ? 'pointer' : 'default',
+              }}
+
             onClick={(e) => {
                 e.stopPropagation();
 

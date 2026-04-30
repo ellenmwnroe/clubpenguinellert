@@ -122,18 +122,19 @@ const styles: Record<string, CSSProperties> = {
 
   playerName: {
   position: 'absolute',
-  top: '55px',
-  left:'190px',
+  top: '8.5%',
+  left: '58%',
   transform: 'translateX(-50%)',
-  width: '68%',
+  width: '52%',
   textAlign: 'center',
-  fontSize: 'clamp(1.45rem, 5vw, 1.9rem)',
+  fontSize: 'clamp(1.1rem, 4.2vw, 1.9rem)',
   color: '#111',
   lineHeight: 1,
   textTransform: 'lowercase',
-  zIndex: 2,
-  fontFamily: ' arial, sans-serif',
-  fontWeight: 'bold',
+  zIndex: 5,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 },
 
   penguinArea: {
