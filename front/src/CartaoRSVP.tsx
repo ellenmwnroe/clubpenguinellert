@@ -52,7 +52,7 @@ export default function CartaoRSVP({
 
             <div style={styles.infoItem}>
               <small style={styles.label}>quando</small>
-              <span style={styles.value}>15 de maio · 20h30</span>
+              <span style={styles.value}>30 de maio · 20h30</span>
             </div>
 
             {puffle && (
