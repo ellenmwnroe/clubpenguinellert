@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import axios from 'axios';
+import { supabase } from './supabase.ts';
 import CartaoRSVP from './CartaoRSVP';
 import DanceClub from './danceclub';
 
@@ -66,7 +66,7 @@ function App() {
     setLoading(true);
 
     try {
-      await axios.post('http://127.0.0.1:8000/api/rsvp', {
+      await supabase.from('rsvps').insert({
         nome_pinguim: nomeLimpo,
         cor: corSelecionada,
         trazendo_puffle: puffle,
